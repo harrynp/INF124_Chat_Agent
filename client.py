@@ -7,13 +7,31 @@ import json
 import threading
 
 msg = ""
+chat_log = []
+
 
 def user_input(handler, msg):
     while True:
         msg = input(handler.get_username() + ": ")
         if len(msg) > 0:
-            handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
-                                                             ("message", msg)])) + "\n", 'UTF-8'))
+            if msg.startswith(":s"):
+                msg.strip()
+                split_string = msg.split(' ', 1)
+                if len(split_string) == 1:
+                    path = "log.txt"
+                else:
+                    path = split_string + "\\log.txt"
+                f = open("log.txt", 'w')
+                for message in chat_log:
+                    f.write("{}: {}\n".format(message[0], message[1]))
+                f.close()
+                print("Log file saved!")
+            elif msg == ":q":
+                handler.close()
+            else:
+                handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
+                                                                 ("message", msg)])) + "\n", 'UTF-8'))
+                chat_log.append((handler.get_username(), msg))
         msg = ""
 
 
@@ -49,6 +67,7 @@ class Client(asynchat.async_chat):
             data = split_string[1]
             json_data = json.loads(data)
             print("{}: {}".format(json_data["username"], json_data["message"]))
+            chat_log.append((json_data["username"], json_data["message"]))
         self._received_data = ""
 
     def get_username(self):
