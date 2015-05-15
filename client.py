@@ -28,6 +28,8 @@ def user_input(handler, msg):
                 print("Log file saved!")
             elif msg == ":q":
                 handler.close()
+                asyncore.close_all()
+                return
             else:
                 handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
                                                                  ("message", msg)])) + "\n", 'UTF-8'))
@@ -55,6 +57,7 @@ class Client(asynchat.async_chat):
         self.push(bytes("SET_USERNAME " + self._username + "\n", 'UTF-8'))
         self._user_input_thread.start()
 
+
     def collect_incoming_data(self, data):
         self._received_data += data.decode('UTF-8')
 
@@ -66,7 +69,7 @@ class Client(asynchat.async_chat):
         if key == "MESSAGE":
             data = split_string[1]
             json_data = json.loads(data)
-            print("{}: {}".format(json_data["username"], json_data["message"]))
+            print("\r{}: {}\n{}: ".format(json_data["username"], json_data["message"], self._username), end='')
             chat_log.append((json_data["username"], json_data["message"]))
         self._received_data = ""
 
