@@ -13,7 +13,7 @@ room = []
 class MessageHandler(asynchat.async_chat):
     def __init__(self, sock, addr):
         asynchat.async_chat.__init__(self, sock=sock, map=clients)
-        self.set_terminator(b'\n')
+        self.set_terminator(b'\0')
         self._username = ""
         self._received_data = ""
 
@@ -41,7 +41,7 @@ class MessageHandler(asynchat.async_chat):
             #         pass
             for client in room:
                 if client != self:
-                    client.push(bytes(self._received_data + "\n", 'UTF-8'))
+                    client.push(bytes(self._received_data + "\0", 'UTF-8'))
                 # try:
                 #     client.push(bytes(self._received_data + "\n"))
                 # except Exception as e:
@@ -69,6 +69,8 @@ class Server(asyncore.dispatcher):
         self.bind((host, port))
         self.listen(5)
         print("Server started.")
+        print("IP address is {}.".format(host))
+        print("Port is {}.".format(port))
         print("Waiting for connections...")
 
     def handle_accepted(self, sock, addr):
@@ -78,8 +80,15 @@ class Server(asyncore.dispatcher):
 
 
 def main():
-    # my_ip = json.loads(urllib.request.urlopen('https://api.ipify.org/?format=json'))['ip']
-    server = Server("localhost", 8000)
+    # server = Server("localhost", 8000)
+    # External IP address
+    # my_ip = json.loads(urllib.request.urlopen('https://api.ipify.org/?format=json').read().decode('UTF-8'))['ip']
+    # Internal IP address
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 80))
+    my_ip = s.getsockname()[0]
+    s.close()
+    server = Server(my_ip, 8000)
     asyncore.loop(timeout=1, map=clients)
 
 

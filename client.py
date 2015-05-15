@@ -32,7 +32,7 @@ def user_input(handler, msg):
                 return
             else:
                 handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
-                                                                 ("message", msg)])) + "\n", 'UTF-8'))
+                                                                 ("message", msg)])) + "\0", 'UTF-8'))
                 chat_log.append((handler.get_username(), msg))
         msg = ""
 
@@ -43,7 +43,7 @@ class Client(asynchat.async_chat):
         asynchat.async_chat.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((host, port))
-        self.set_terminator(b'\n')
+        self.set_terminator(b'\0')
         self._received_data = ""
         self._username = ""
         self._user_input_thread = threading.Thread(target=user_input, args=(self, msg,))
@@ -54,7 +54,7 @@ class Client(asynchat.async_chat):
             self._username = input("Please enter username: ")
             if self._username == "":
                 print("Username cannot be empty.")
-        self.push(bytes("SET_USERNAME " + self._username + "\n", 'UTF-8'))
+        self.push(bytes("SET_USERNAME " + self._username + "\0", 'UTF-8'))
         self._user_input_thread.start()
 
 
@@ -62,7 +62,7 @@ class Client(asynchat.async_chat):
         self._received_data += data.decode('UTF-8')
 
     def found_terminator(self):
-        self._received_data.strip('\n')
+        self._received_data.strip('\0')
         split_string = self._received_data.split(' ', 1)
         key = split_string[0]
         # print(self._received_data)
@@ -77,10 +77,22 @@ class Client(asynchat.async_chat):
         return self._username
 
 
+def check_ip_addr(ip_addr):
+    try:
+        socket.inet_pton(socket.AF_INET, ip_addr)
+        return True
+    except socket.error:
+        return False
 
 def main():
-    # ip_addr = input("Please input server's IP address: ")
-    client = Client("localhost", 8000)
+    # client = Client("localhost", 8000)
+    ip_addr = ""
+    while not check_ip_addr(ip_addr):
+        ip_addr = input("Please input server's IP address: ")
+    port = ""
+    while not port.isdigit():
+        port = input("Please input server's port: ")
+    client = Client(ip_addr, int(port))
     asyncore.loop(timeout=1)
 
 
