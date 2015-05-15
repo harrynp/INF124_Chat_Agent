@@ -5,36 +5,37 @@ import asynchat
 import socket
 import json
 import threading
+import controller
 
 msg = ""
 chat_log = []
 
 
-def user_input(handler, msg):
-    while True:
-        msg = input(handler.get_username() + ": ")
-        if len(msg) > 0:
-            if msg.startswith(":s"):
-                msg.strip()
-                split_string = msg.split(' ', 1)
-                if len(split_string) == 1:
-                    path = "log.txt"
-                else:
-                    path = split_string + "\\log.txt"
-                f = open("log.txt", 'w')
-                for message in chat_log:
-                    f.write("{}: {}\n".format(message[0], message[1]))
-                f.close()
-                print("Log file saved!")
-            elif msg == ":q":
-                handler.close()
-                asyncore.close_all()
-                return
-            else:
-                handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
-                                                                 ("message", msg)])) + "\0", 'UTF-8'))
-                chat_log.append((handler.get_username(), msg))
-        msg = ""
+# def user_input(handler, msg):
+#     while True:
+#         msg = input(handler.get_username() + ": ")
+#         if len(msg) > 0:
+#             if msg.startswith(":s"):
+#                 msg.strip()
+#                 split_string = msg.split(' ', 1)
+#                 if len(split_string) == 1:
+#                     path = "log.txt"
+#                 else:
+#                     path = split_string + "\\log.txt"
+#                 f = open("log.txt", 'w')
+#                 for message in chat_log:
+#                     f.write("{}: {}\n".format(message[0], message[1]))
+#                 f.close()
+#                 print("Log file saved!")
+#             elif msg == ":q":
+#                 handler.close()
+#                 asyncore.close_all()
+#                 return
+#             else:
+#                 handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
+#                                                                  ("message", msg)])) + "\0", 'UTF-8'))
+#                 chat_log.append((handler.get_username(), msg))
+#         msg = ""
 
 
 class Client(asynchat.async_chat):
@@ -46,8 +47,7 @@ class Client(asynchat.async_chat):
         self.set_terminator(b'\0')
         self._received_data = ""
         self._username = ""
-        self._user_input_thread = threading.Thread(target=user_input, args=(self, msg,))
-
+        self._user_input_thread = threading.Thread(target=controller.user_input, args=(self, msg, chat_log,))
 
     def handle_connect(self):
         while self._username == "":
@@ -56,7 +56,6 @@ class Client(asynchat.async_chat):
                 print("Username cannot be empty.")
         self.push(bytes("SET_USERNAME " + self._username + "\0", 'UTF-8'))
         self._user_input_thread.start()
-
 
     def collect_incoming_data(self, data):
         self._received_data += data.decode('UTF-8')
