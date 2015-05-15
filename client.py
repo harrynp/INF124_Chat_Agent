@@ -22,7 +22,7 @@ chat_log = []
 #                     path = "log.txt"
 #                 else:
 #                     path = split_string + "\\log.txt"
-#                 f = open("log.txt", 'w')
+#                 f = open(path, 'w')
 #                 for message in chat_log:
 #                     f.write("{}: {}\n".format(message[0], message[1]))
 #                 f.close()

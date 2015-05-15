@@ -1,5 +1,6 @@
 __author__ = 'Harry'
 import json
+import os
 
 def user_input(handler, msg, chat_log):
     while True:
@@ -11,12 +12,15 @@ def user_input(handler, msg, chat_log):
                 if len(split_string) == 1:
                     path = "log.txt"
                 else:
-                    path = split_string + "\\log.txt"
-                f = open("log.txt", 'w')
+                    path = split_string[1] + "\\log.txt"
+                f = open(path, 'w')
                 for message in chat_log:
                     f.write("{}: {}\n".format(message[0], message[1]))
                 f.close()
-                print("Log file saved!")
+                if path == "log.txt":
+                    print("Log file saved at {}{}!".format(os.getcwd(), "\\log.txt"))
+                else:
+                    print("Log file saved at {}!".format(path))
             elif msg == ":q":
                 handler.close()
                 return
