@@ -24,28 +24,23 @@ class MessageHandler(asynchat.async_chat):
         self._received_data += data.decode('UTF-8')
 
     def found_terminator(self):
-        self._received_data = self._received_data.strip('\n')
+        self._received_data = self._received_data.strip('\0')
         split_string = self._received_data.split(' ', 1)
         key = split_string[0]
         print(self._received_data)
         if key == "SET_USERNAME":
             self._username = split_string[1]
         elif key == "MESSAGE":
-            # data = split_string[1]
-            # json_data = json.loads(data)
-            # for client in clients:
-            #     try:
-            #         if client != self:
-            #             client.push(bytes("MESSAGE " + json.dumps(data) + "\n", 'UTF-8'))
-            #     except:
-            #         pass
             for client in room:
                 if client != self:
                     client.push(bytes(self._received_data + "\0", 'UTF-8'))
-                # try:
-                #     client.push(bytes(self._received_data + "\n"))
-                # except Exception as e:
-                #     print(e)
+        elif key == "CHAT_START":
+            for client in room:
+                client.push(bytes("CHAT_START", 'UTF-8'))
+        elif key == "COMMAND":
+            for client in room:
+                if client != self:
+                    client.push(bytes(self._received_data + "\0", 'UTF-8'))
         self._received_data = ""
 
     # def handle_error(self):
@@ -76,7 +71,10 @@ class Server(asyncore.dispatcher):
     def handle_accepted(self, sock, addr):
         print("Incoming conection from {}".format(repr(addr)))
         handler = MessageHandler(sock, addr)
-        room.append(handler)
+        if len(room) >= 2:
+            handler.push(bytes("ROOM_FULL", 'UTF-8'))
+        else:
+            room.append(handler)
 
 
 def main():
@@ -88,7 +86,7 @@ def main():
     s.connect(('8.8.8.8', 80))
     my_ip = s.getsockname()[0]
     s.close()
-    server = Server(my_ip, 8000)
+    server = Server(my_ip, 8888)
     asyncore.loop(timeout=1, map=clients)
 
 

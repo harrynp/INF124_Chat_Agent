@@ -2,6 +2,21 @@ __author__ = 'Harry'
 import json
 import os
 
+def get_user_info():
+    keyword = ""
+    extra_info = ""
+    while keyword != "QUESTION" or keyword != "FEEDBACK" or keyword != "OTHER":
+        keyword = input("Please choose from one of the following keywords:\nQUESTION: Ask a live agent a question.\nFEEDBACK: Send us some feedback.\nOTHER: Any other option not listed above.")
+    if keyword == "QUESTION":
+        extra_info = input("Please enter your question that will be sent to the agent: ")
+    elif keyword == "FEEDBACK":
+        extra_info = input("Please enter your feedback that want to talk to the agent about: ")
+    elif keyword == "OTHER":
+        extra_info = input("Please enter any information that may help the agent with this request: ")
+    return json.dumps(dict([("command", keyword),
+                            ("info", extra_info)]))
+
+
 def user_input(handler, msg, chat_log):
     while True:
         msg = input(handler.get_username() + ": ")
