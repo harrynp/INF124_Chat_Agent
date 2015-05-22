@@ -36,7 +36,7 @@ class MessageHandler(asynchat.async_chat):
                     client.push(bytes(self._received_data + "\0", 'UTF-8'))
         elif key == "CHAT_START":
             for client in room:
-                client.push(bytes("CHAT_START", 'UTF-8'))
+                client.push(bytes("CHAT_START\0", 'UTF-8'))
         elif key == "COMMAND":
             for client in room:
                 if client != self:

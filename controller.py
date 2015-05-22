@@ -5,8 +5,8 @@ import os
 def get_user_info():
     keyword = ""
     extra_info = ""
-    while keyword != "QUESTION" or keyword != "FEEDBACK" or keyword != "OTHER":
-        keyword = input("Please choose from one of the following keywords:\nQUESTION: Ask a live agent a question.\nFEEDBACK: Send us some feedback.\nOTHER: Any other option not listed above.")
+    while keyword != "QUESTION" and keyword != "FEEDBACK" and keyword != "OTHER":
+        keyword = input("Please choose from one of the following keywords:\nQUESTION: Ask a live agent a question.\nFEEDBACK: Send us some feedback.\nOTHER: Any other option not listed above.\n")
     if keyword == "QUESTION":
         extra_info = input("Please enter your question that will be sent to the agent: ")
     elif keyword == "FEEDBACK":

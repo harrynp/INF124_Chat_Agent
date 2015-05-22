@@ -85,7 +85,7 @@ class Client(asynchat.async_chat):
             json_data = json.loads(data)
             self._view.print_user_info(json_data)
             input("Please press enter to start chat with the user.")
-            self.push(bytes("CHAT_START", 'UTF-8'))
+            self.push(bytes("CHAT_START\0", 'UTF-8'))
         elif key == "MESSAGE":
             data = split_string[1]
             json_data = json.loads(data)
