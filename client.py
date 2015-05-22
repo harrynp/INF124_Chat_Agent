@@ -117,7 +117,7 @@ def main():
     while not port.isdigit():
         port = input("Please input server's port: ")
     view_mode = ""
-    while view_mode != "user" or view_mode != "agent":
+    while view_mode != "user" and view_mode != "agent":
         view_mode = input("Please enter if you're a user or agent: ")
     client = Client(ip_addr, int(port), view_mode)
     asyncore.loop(timeout=1)
