@@ -2,7 +2,7 @@ __author__ = 'Harry'
 import json
 import os
 
-def get_user_info():
+def get_user_info(username):
     keyword = ""
     extra_info = ""
     while keyword != "QUESTION" and keyword != "FEEDBACK" and keyword != "OTHER":
@@ -14,11 +14,14 @@ def get_user_info():
     elif keyword == "OTHER":
         extra_info = input("Please enter any information that may help the agent with this request: ")
     return json.dumps(dict([("command", keyword),
-                            ("info", extra_info)]))
+                            ("info", extra_info),
+                            ("username", username)]))
 
+
+chat_open = True
 
 def user_input(handler, msg, chat_log):
-    while True:
+    while chat_open:
         msg = input(handler.get_username() + ": ")
         if len(msg) > 0:
             if msg.startswith(":s"):

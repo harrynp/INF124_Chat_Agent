@@ -11,33 +11,6 @@ msg = ""
 chat_log = []
 
 
-# def user_input(handler, msg):
-#     while True:
-#         msg = input(handler.get_username() + ": ")
-#         if len(msg) > 0:
-#             if msg.startswith(":s"):
-#                 msg.strip()
-#                 split_string = msg.split(' ', 1)
-#                 if len(split_string) == 1:
-#                     path = "log.txt"
-#                 else:
-#                     path = split_string + "\\log.txt"
-#                 f = open(path, 'w')
-#                 for message in chat_log:
-#                     f.write("{}: {}\n".format(message[0], message[1]))
-#                 f.close()
-#                 print("Log file saved!")
-#             elif msg == ":q":
-#                 handler.close()
-#                 asyncore.close_all()
-#                 return
-#             else:
-#                 handler.push(bytes("MESSAGE " + json.dumps(dict([("username", handler.get_username()),
-#                                                                  ("message", msg)])) + "\0", 'UTF-8'))
-#                 chat_log.append((handler.get_username(), msg))
-#         msg = ""
-
-
 class Client(asynchat.async_chat):
 
     def __init__(self, host, port, view_mode):
@@ -47,6 +20,7 @@ class Client(asynchat.async_chat):
         self.set_terminator(b'\0')
         self._received_data = ""
         self._username = ""
+        self._user_input_thread_running = False
         self. _user_input_thread= threading.Thread(target=controller.user_input, args=(self, msg, chat_log,))
         self._view_mode = view_mode
         if view_mode == "user":
@@ -58,17 +32,18 @@ class Client(asynchat.async_chat):
         self._view = view.View()
 
     def handle_connect(self):
+        self.push(bytes("SET_VIEW {}\0".format(self._view_mode), 'UTF-8'))
         while self._username == "":
             self._username = input("Please enter username: ")
             if self._username == "":
                 print("Username cannot be empty.")
-        self.push(bytes("SET_USERNAME " + self._username + "\0", 'UTF-8'))
-        if self._view_mode == "user":
-            json_data = controller.get_user_info()
-            self.push(bytes("COMMAND " + json_data + "\0", 'UTF-8'))
-            print("Waiting for agent to enter chat room...")
-        elif self._view_mode == "agent":
-            print("Waiting for client to enter information...")
+        self.push(bytes("SET_USERNAME {}\0".format(self._username), 'UTF-8'))
+        # if self._view_mode == "user":
+        #     json_data = controller.get_user_info()
+        #     self.push(bytes("COMMAND {}\0".format(json_data), 'UTF-8'))
+        #     print("Waiting for agent to enter chat room...")
+        # elif self._view_mode == "agent":
+        #     print("Waiting for client to enter information...")
 
     def collect_incoming_data(self, data):
         self._received_data += data.decode('UTF-8')
@@ -79,7 +54,10 @@ class Client(asynchat.async_chat):
         key = split_string[0]
         # print(self._received_data)
         if key == "CHAT_START":
-            self._user_input_thread.start()
+            controller.chat_open = True
+            if not self._user_input_thread_running:
+                self._user_input_thread.start()
+                self._user_input_thread_running = True
         elif key == "COMMAND":
             data = split_string[1]
             json_data = json.loads(data)
@@ -90,11 +68,29 @@ class Client(asynchat.async_chat):
             data = split_string[1]
             json_data = json.loads(data)
             # print("\r{}: {}\n{}: ".format(json_data["username"], json_data["message"], self._username), end='')
-            self._view.print_message(json_data)
+            self._view.print_message(json_data, self._username)
             chat_log.append((json_data["username"], json_data["message"]))
         elif key == "ROOM_FULL":
-            input("We're sorry.  Our agent is currently occupied with another customer.  Please press enter to close this chat client")
+            print("We're sorry.  Our agent is currently occupied with another customer.  Please wait...")
+        elif key == "ROOM_ENTER":
+            if self._view_mode == "user":
+                json_data = controller.get_user_info(self._username)
+                self.push(bytes("COMMAND {}\0".format(json_data), 'UTF-8'))
+                print("Thank you for waiting.  Our agent is now ready to chat with you.  Please wait for agent to start the chat.")
+            elif self._view_mode == "agent":
+                print("Waiting for client to enter information...")
+            # self._user_input_thread.start()
+        elif key == "AGENT_ALREADY_IN_ROOM":
+            input("An agent is already connect.  Please press enter to close.")
             self.close()
+        elif key == "NO_AGENT":
+            print("\rWe're sorry.  Our agent is currently not connected to the chat room right now.  Please input :q to quit.\n{}: ".format(self._username))
+            controller.chat_open = False
+            self.close()
+        elif key == "ROOM_LEAVE":
+            username = split_string[1]
+            print("\r{} has left the room".format(username))
+            controller.chat_open = False
         self._received_data = ""
 
     def get_username(self):
