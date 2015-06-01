@@ -20,8 +20,8 @@ class Client(asynchat.async_chat):
         self.set_terminator(b'\0')
         self._received_data = ""
         self._username = ""
-        self._user_input_thread_running = False
-        self. _user_input_thread= threading.Thread(target=controller.user_input, args=(self, msg, chat_log,))
+        # self._user_input_thread_running = False
+        self._user_input_thread = None
         self._view_mode = view_mode
         if view_mode == "user":
             import user_view as view
@@ -45,6 +45,11 @@ class Client(asynchat.async_chat):
         # elif self._view_mode == "agent":
         #     print("Waiting for client to enter information...")
 
+    def handle_close(self):
+        controller.chat_open = False
+        input("\rServer connection lost. Press enter to quit.")
+        self.close()
+
     def collect_incoming_data(self, data):
         self._received_data += data.decode('UTF-8')
 
@@ -55,9 +60,10 @@ class Client(asynchat.async_chat):
         # print(self._received_data)
         if key == "CHAT_START":
             controller.chat_open = True
-            if not self._user_input_thread_running:
-                self._user_input_thread.start()
-                self._user_input_thread_running = True
+            # if not self._user_input_thread_running:
+            self._user_input_thread= threading.Thread(target=controller.user_input, args=(self, msg, chat_log,))
+            self._user_input_thread.start()
+                # self._user_input_thread_running = True
         elif key == "COMMAND":
             data = split_string[1]
             json_data = json.loads(data)
